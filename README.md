@@ -1,6 +1,6 @@
 # 🎨 Frontend - Generador de Ideas Infinitas
 
-[Repositorio del backend](https://github.com/sandovaldavid/generador-ideas-backend)
+[Repositorio del backend](https://github.com/sandovaldavid/ideas-generator-ai-api)
 
 > Interfaz moderna y elegante para generar ideas de negocio usando IA
 
@@ -31,10 +31,10 @@
 
 ```bash
 # Clonar el repositorio (si no lo has hecho)
-git clone https://github.com/sandovaldavid/generador-ideas-frontend.git
+git clone https://github.com/dev-sandoval/ideas-generator-ai-web.git
 
 # Ir al directorio frontend
-cd generador-ideas-frontend
+cd ideas-generator-ai-web
 
 # Instalar dependencias
 npm install
