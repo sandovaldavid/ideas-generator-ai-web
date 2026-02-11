@@ -5,6 +5,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-3178c6?style=flat&logo=typescript)
 ![Vite](https://img.shields.io/badge/Vite-7.1.7-646cff?style=flat&logo=vite)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.1.14-38bdf8?style=flat&logo=tailwindcss)
+![Vitest](https://img.shields.io/badge/Vitest-3.0.0-729B1B?style=flat&logo=vitest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat)](LICENSE)
 
 ---
@@ -48,7 +49,7 @@ This project implements a **Component-Based Architecture** with clear separation
 | **Styling** | Tailwind CSS v4 | Utility-first, zero-runtime overhead, design consistency | CSS Modules (rejected: slower dev velocity) |
 | **State Management** | TanStack Query v5 | Robust server state management, declarative data fetching | Redux (rejected: overkill for server state) |
 | **Performance** | React Compiler | Automatic memoization (babel-plugin-react-compiler) | Manual `useMemo` (rejected: maintenance overhead) |
-| **Testing** | Vitest | Fast unit testing, Jest compatible | Jest (rejected: slower execution) |
+| **Testing** | Vitest + MSW | Fast unit testing, network mocking for integration tests | Jest (rejected: slower execution) |
 
 ### Critical Trade-offs
 
@@ -113,6 +114,15 @@ npm run dev
 bun dev
 ```
 
+### Running Tests
+
+```bash
+# Run unit and integration tests
+npm run test
+# or
+bun test
+```
+
 The application will be available at `http://localhost:5173`.
 
 ---
@@ -130,13 +140,15 @@ The application will be available at `http://localhost:5173`.
 - **Loading States**: Custom loader animations during AI processing.
 - **Error Handling**: Graceful error messages for network failures or API errors.
 - **Responsive Layout**: Adapts from single-column (mobile) to multi-column (desktop) grids.
+- **Theme System**: Native Dark Mode support with toggle and system preference detection.
+- **Clipboard Integration**: One-click copy functionality for generated ideas.
 
 ### Code Quality Standards
 
 - **Linting**: ESLint with React and TypeScript recommended rules.
 - **Formatting**: Consistent code style enforced.
 - **Type Safety**: Strict TypeScript configuration (`noImplicitAny`, etc.).
-- **Testing**: Unit tests setup with Vitest and React Testing Library.
+- **Testing**: Comprehensive integration tests covering happy paths and error scenarios (Chaos Engineering).
 
 ---
 
@@ -175,6 +187,38 @@ export const useIdeasGenerator = () => {
 - **Robustness**: Automatic handling of request states and error propagation.
 - **Maintainability**: Separated data fetching logic from presentation components.
 
+### Challenge 2: Ensuring Reliability without a Real Backend
+
+**Context**: Developing the frontend in parallel with the backend introduced dependencies on an unstable API. We needed a way to verify frontend logic robustly without relying on the actual server availability.
+
+**Root Cause Analysis**:
+- Flaky end-to-end tests due to network issues or backend downtime.
+- Difficulty in reproducing specific error scenarios (e.g., 500 Server Error) on demand.
+
+**Solution Implementation**:
+Implemented integration tests using **Vitest** combined with **MSW (Mock Service Worker)** to intercept network requests at the network level.
+
+```typescript
+// src/App.test.tsx (Chaos Engineering Scenario)
+it('Scenario B: Chaos Engineering - API returns 500', async () => {
+  server.use(
+    http.post(getUrl(), () => {
+      return new HttpResponse(null, { status: 500 }); // Force 500 Error
+    })
+  );
+
+  // Test asserts that the UI gracefully handles the error
+  await waitFor(() => {
+    expect(screen.getByText(/Error del servidor: 500/i)).toBeInTheDocument();
+  });
+});
+```
+
+**Results**:
+- **Confidence**: 100% deterministic tests for both success and failure paths.
+- **Velocity**: Developers can work offline or without running the backend locally.
+- **Quality**: Regressions in error handling logic are caught immediately in CI.
+
 ---
 
 ## Project Structure
@@ -184,7 +228,8 @@ src/
 ├── components/          # Reusable UI components
 │   ├── Layout.tsx       # Main application layout
 │   ├── GeneratorForm.tsx # Input form component
-│   └── IdeasDisplay.tsx # Results visualization
+│   ├── IdeasDisplay.tsx # Results visualization
+│   └── icons/           # Icon components
 ├── config/              # Configuration constants
 │   └── constants.ts     # API URLs, messages
 ├── hooks/               # Custom React Hooks
@@ -192,7 +237,9 @@ src/
 ├── types/               # TypeScript interfaces
 │   └── index.ts         # Domain models
 ├── utils/               # Helper functions
+│   └── helpers.ts       # Clipboard logic, delays
 ├── App.tsx              # Root component
+├── App.test.tsx         # Integration tests
 └── main.tsx             # Entry point
 ```
 
@@ -225,13 +272,13 @@ This project is optimized for deployment on Vercel.
 ## Roadmap and Future Enhancements
 
 ### Immediate Priorities
-- [ ] Add unit tests for critical components (GeneratorForm, IdeasDisplay).
-- [ ] Implement "Copy to Clipboard" functionality for generated ideas.
+- [ ] Implement "History" feature to view previously generated ideas (Local Storage).
+- [ ] Add PWA (Progressive Web App) support for offline access.
 
 ### Mid-term Goals
-- [ ] User Authentication (Save history of generated ideas).
-- [ ] Social Sharing integration.
-- [ ] Dark/Light mode toggle (system preference currently supported via Tailwind).
+- [ ] User Authentication (Save history to cloud).
+- [ ] Social Sharing integration (Twitter/X, LinkedIn).
+- [ ] Export ideas to PDF or Notion.
 
 ---
 
